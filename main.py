@@ -1,98 +1,55 @@
 import streamlit as st
 import pickle
-st.header("Disease Detection Page")
+import matplotlib.pyplot as plt
+import pandas as pd
+
+# Load the heart disease prediction model
 heart_dis_model = pickle.load(open('heart_disease_model.pkl', 'rb'))
-age = None
-try:
-    age = float(st.text_input('Age'))
-except ValueError:
-    pass
 
-sex = None
-try:
-     sex = float(st.text_input('Sex'))
-except ValueError:
-     pass
+# Streamlit UI
+st.header("Heart Disease Detection Page")
 
-cp = None
-try:
-    cp = float(st.text_input('Chest Pain Type (cp)'))
-except ValueError:
-    pass
+# Input fields
+age = st.number_input('Age', min_value=1, max_value=100, step=1)
+sex = st.radio('Sex', ['Male', 'Female'])
+cp = st.selectbox('Chest Pain Type (cp)', [0, 1, 2, 3])
+trestbps = st.number_input('Resting Blood Pressure (trestbps)', min_value=80, max_value=200, step=1)
+chol = st.number_input('Cholesterol (chol)', min_value=100, max_value=600, step=1)
+fbs = st.radio('Fasting Blood Sugar (fbs)', ['<= 120 mg/dl', '> 120 mg/dl'])
+restecg = st.selectbox('Resting Electrocardiographic Results (restecg)', [0, 1, 2])
+thalach = st.number_input('Maximum Heart Rate Achieved (thalach)', min_value=60, max_value=220, step=1)
+exang = st.radio('Exercise Induced Angina (exang)', ['No', 'Yes'])
+oldpeak = st.number_input('ST Depression Induced by Exercise Relative to Rest (oldpeak)', min_value=0.0, max_value=10.0, step=0.1)
+slope = st.selectbox('Slope of the ST Segment (slope)', [0, 1, 2])
+ca = st.selectbox('Number of Major Vessels (0-3) Colored by Fluoroscopy (ca)', [0, 1, 2, 3])
+thal = st.selectbox('Thalassemia (thal)', [0, 1, 2, 3])
 
-trestbps = None
-try:
-    trestbps = float(st.text_input('Resting Blood Pressure (trestbps)'))
-except ValueError:
-    pass
+# Convert categorical variables to numeric values
+sex_numeric = 1 if sex == 'Male' else 0
+fbs_numeric = 1 if fbs == '> 120 mg/dl' else 0
+exang_numeric = 1 if exang == 'Yes' else 0
 
-chol = None
-try:
-    chol = float(st.text_input('Cholesterol (chol)'))
-except ValueError:
-    pass
-
-fbs = None
-try:
-    fbs = float(st.text_input('Fasting Blood Sugar (fbs)'))
-except ValueError:
-    pass
-
-restecg = None
-try:
-    restecg = float(st.text_input('Resting Electrocardiographic Results (restecg)'))
-except ValueError:
-    pass
-
-thalach = None
-try:
-    thalach = float(st.text_input('Maximum Heart Rate Achieved (thalach)'))
-except ValueError:
-    pass
-
-exang = None
-try:
-    exang = float(st.text_input('Exercise Induced Angina (exang)'))
-except ValueError:
-    pass
-
-oldpeak = None
-try:
-    oldpeak = float(st.text_input('ST Depression Induced by Exercise Relative to Rest (oldpeak)'))
-except ValueError:
-    pass
-
-slope = None
-try:
-    slope = float(st.text_input('Slope of the ST Segment (slope)'))
-except ValueError:
-    pass
-
-ca = None
-try:
-    ca = float(st.text_input('Number of Major Vessels (0-3) Colored by Fluoroscopy (ca)'))
-except ValueError:
-    pass
-thal = None
-try:
-    thal = float(st.text_input('Thalassemia (thal)'))
-except ValueError:
-    pass
-
-heart_diagnosis = ''
+# Visualization based on inputs
 if st.button('Diagnosis Test Result'):
-    if (
-                    age is not None and sex is not None and cp is not None and trestbps is not None and chol is not None
-                    and fbs is not None and restecg is not None and thalach is not None and exang is not None
-                    and oldpeak is not None and slope is not None and ca is not None and thal is not None
-            ):
-                heart_prediction = heart_dis_model.predict(
-                    [[age, sex, cp, trestbps, chol, fbs, restecg, thalach, exang, oldpeak, slope, ca, thal]]
-                )
-                if heart_prediction[0] == 1:
-                    heart_diagnosis = 'The person has heart disease.'
-                else:
-                    heart_diagnosis = 'The person does not have heart disease.'
-    else:
-                heart_diagnosis = 'Please provide valid input for all fields.'
-    st.success(heart_diagnosis)
+    # Display input values as a bar chart
+    input_data = pd.DataFrame({
+        'Input': ['Age', 'Sex', 'Chest Pain Type', 'Resting Blood Pressure', 'Cholesterol', 'Fasting Blood Sugar',
+                  'Resting Electrocardiographic Results', 'Maximum Heart Rate', 'Exercise Induced Angina',
+                  'ST Depression', 'Slope of the ST Segment', 'Number of Major Vessels', 'Thalassemia'],
+        'Value': [age, sex, cp, trestbps, chol, fbs, restecg, thalach, exang, oldpeak, slope, ca, thal]
+    })
+    st.bar_chart(input_data.set_index('Input'))
+
+    # Make predictions and display the result as a pie chart
+    heart_prediction = heart_dis_model.predict_proba([[age, sex_numeric, cp, trestbps, chol, fbs_numeric, restecg, thalach,
+                                                       exang_numeric, oldpeak, slope, ca, thal]])[0]
+
+    result_df = pd.DataFrame({
+        'Prediction': ['Heart Disease', 'No Heart Disease'],
+        'Probability': [heart_prediction[1], heart_prediction[0]]
+    })
+
+    fig, ax = plt.subplots()
+    ax.pie(result_df['Probability'], labels=result_df['Prediction'], autopct='%1.1f%%', startangle=90)
+    ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+    st.pyplot(fig)
