@@ -7,7 +7,7 @@ import pandas as pd
 heart_dis_model = pickle.load(open('heart_disease_model.pkl', 'rb'))
 
 # Streamlit UI
-st.header("Heart Disease Detection Page")
+st.header("Disease Detection Page")
 
 # Input fields
 age = st.number_input('Age', min_value=1, max_value=100, step=1)
@@ -53,3 +53,13 @@ if st.button('Diagnosis Test Result'):
     ax.pie(result_df['Probability'], labels=result_df['Prediction'], autopct='%1.1f%%', startangle=90)
     ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
     st.pyplot(fig)
+
+    # Provide guidance and links based on the prediction
+    if heart_prediction[1] > 0.5:  # If the probability of heart disease is higher
+        st.info("It's recommended to consult a healthcare professional. Here are some resources for guidance:")
+        st.markdown("[American Heart Association](https://www.heart.org/)")
+        st.markdown("[Mayo Clinic - Heart Disease](https://www.mayoclinic.org/diseases-conditions/heart-disease/symptoms-causes/syc-20353118)")
+    else:
+        st.success("No heart disease detected. Maintain a healthy lifestyle!")
+
+# You can add more sections with relevant information based on the user's input and the model's prediction.
